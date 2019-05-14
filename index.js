@@ -3,6 +3,7 @@ var app = express();
 var mongoose = require("mongoose");
 var path = require("path");
 var obj = {};
+var objname = {};
 var messagelist = new Object();
 
 messagelist.AddMessage = function(accsend, accreic, content, time){
@@ -14,33 +15,38 @@ messagelist.AddMessage = function(accsend, accreic, content, time){
 
 mongoose.connect('mongodb://localhost/cnweb');
 const userSchema = new mongoose.Schema({
+	_id : mongoose.Schema.Types.ObjectId,
 	user: String,
 	password: String,
 	name: String
 })
 
 const friendSchema = new mongoose.Schema({
+	_id : mongoose.Schema.Types.ObjectId,
 	account1: String,
 	account2: String
 })
 
 const messSchema = new mongoose.Schema({
+	_id : mongoose.Schema.Types.ObjectId,
 	accsend: String, 
 	accreic: String, 
 	content: String,
-	time: Date
+	time: String
 })
 
 const comSchema = new mongoose.Schema({
+	_id : mongoose.Schema.Types.ObjectId,
 	account : String,
 	name : String,
 	content : String,
 	date : String,
 	time : String,
-	idpost : String
+	idpost : mongoose.Schema.Types.ObjectId
 })
 
 const postSchemar = new mongoose.Schema({
+	_id : mongoose.Schema.Types.ObjectId,
 	account : String,
 	name : String,
 	content : String,
@@ -49,11 +55,13 @@ const postSchemar = new mongoose.Schema({
 })
 
 const requestSchemar = new mongoose.Schema({
+	_id : mongoose.Schema.Types.ObjectId,
 	accsend : String,
 	accreic : String
 })
 
 const likeSchemar = new mongoose.Schema({
+	_id : mongoose.Schema.Types.ObjectId,
 	acc : String,
 	idpost : String
 })
@@ -73,6 +81,8 @@ var urlencodedParser = bodyParser.urlencoded({extended: false});
 app.use(express.static(path.join(__dirname,'/public')));
 app.set("view engine", "ejs");
 app.set("views", "./views");
+
+
 app.get("/message", function(req, res){
 var mang = [];
 var mangten = [];
@@ -103,14 +113,13 @@ var list = [];
 			mangten.push(row);
 		}
 	});
-	console.log(mang);
-	console.log(mangten);
 	var data = {
 		hoten: mangten,
 		first: mangten[0].name,
 		firstacc : mang[0],
 		listmess: list,
-		mainacc: obj.value
+		mainacc: obj.value,
+		mainname: objname.value
 
 	};
 	res.render("message",data);
@@ -159,7 +168,8 @@ var list1 = [];
 		first: response.namesend,
 		firstacc : response.accsend,
 		listmess: list1,
-		mainacc: obj.value
+		mainacc: obj.value,
+		mainname: objname.value
 
 	};
 	res.render("message",data);
@@ -170,26 +180,220 @@ var list1 = [];
 app.get("/", function(req, res){
 	res.render("login");
 })
-app.get("/index", function(req, res){
-	var acc, pass;
+app.get("/index", async function(req, res){
+	var mangpost = [];
+	var mang1 = [];
+	var mang2 = [];
+	var mangcmt = [];
 	response = {
 		username : req.query.username,
 		password : req.query.pass
 	};
 	change(obj, response.username);
+
+	
+	await comment.find().exec((err, comments) =>{
+		comments.forEach(function(row){
+			mangcmt.push(row);
+		});
+	});
+
+
+    friend.find().exec((err, users) => {
+		users.forEach(function(row){
+			if(row.account1 === obj.value){
+				mang1.push(row.account2);
+			}
+			else if(row.account2 === obj.value)
+			{
+				mang1.push(row.account1);
+			}
+			
+		});
+	});
+
+	user.find().exec((err, users) => {
+				users.forEach(function(row){
+					if (mang1.indexOf(row.user) != -1) {
+
+					}
+					else {
+						if(row.user != obj.value){
+							mang2.push(row);
+							console.log(row);
+
+						}
+					}
+				});
+			});
+	
+
+	post.find().exec((err, posts) => {
+		posts.forEach(function(row){
+			mangpost.push(row);
+		});
+		mangpost.reverse();
+	
 	user.findOne({'user' : response.username}, 'user password name', function(err, users){
 		if(err){
-
+			res.render("login");
 		}
 		if (response.password === users.password)
 		{
-			var data = {
-				result : users
-			}
+			change(objname, users.name);
+		    var data = {
+		    	post : mangpost,
+		    	users : users,
+		    	manggoiy : mang2,
+		    	mangcmt : mangcmt
+
+		    };
+		    console.log(mangcmt);
 			res.render("index", data);
 		}
-	})
+		else {res.render("login");}
+
 });
+	});
+});
+app.get("/index1", async function(req, res){
+	var mangpost = [];
+	var mang1 = [];
+	var mang2 = [];
+	var mangcmt = [];
+	console.log(obj);
+	await comment.find().exec((err, comments) =>{
+		comments.forEach(function(row){
+			mangcmt.push(row);
+		});
+	});
+	 friend.find().exec((err, users) => {
+		users.forEach(function(row){
+			if(row.account1 === obj.value){
+				mang1.push(row.account2);
+			}
+			else if(row.account2 === obj.value)
+			{
+				mang1.push(row.account1);
+			}
+			
+		});
+	});
+
+	user.find().exec((err, users) => {
+				users.forEach(function(row){
+					if (mang1.indexOf(row.user) != -1) {
+
+					}
+					else {
+						if(row.user != obj.value){
+							mang2.push(row);
+
+						}
+					}
+				});
+			});
+	user.findOne({'user' : obj.value}, 'user password name', function(err, users){
+			if (err) {
+				console.log("bye");
+			}
+			else {
+				post.find().exec((err, posts) => {
+		        posts.forEach(function(row){
+			    mangpost.push(row);
+		        });
+				mangpost.reverse();
+				var data = {
+					post : mangpost,
+					users : users,
+					manggoiy : mang2,
+					mangcmt : mangcmt
+				}
+				res.render("index",data);
+			});
+			}
+		});
+});
+
+app.get("/post", async function(req, res){
+	var d = new Date();
+	var mangcmt = [];
+	var month = d.getMonth() + 1;
+	var time = d.getHours() + ":" + d.getMinutes() + ":" + d.getSeconds();
+	var date = d.getDate() + "/" + month + "/" + d.getFullYear();
+	await comment.find().exec((err, comments) =>{
+		comments.forEach(function(row){
+			mangcmt.push(row);
+		});
+	});
+	response = {
+		user : req.query.account,
+		name : req.query.name,
+		content : req.query.description
+	}
+
+	await post.create({
+		_id : new mongoose.Types.ObjectId(),
+		account : response.user,
+		name : response.name,
+		content : response.content,
+		date : date,
+		time : time
+	});
+	var mangpost = [];
+	var mang1 = [];
+	var mang2 = [];
+	console.log(obj);
+	await friend.find().exec((err, users) => {
+		users.forEach(function(row){
+			if(row.account1 === obj.value){
+				mang1.push(row.account2);
+			}
+			else if(row.account2 === obj.value)
+			{
+				mang1.push(row.account1);
+			}
+			
+		});
+	});
+
+	await user.find().exec((err, users) => {
+				users.forEach(function(row){
+					if (mang1.indexOf(row.user) != -1) {
+
+					}
+					else {
+						if(row.user != obj.value){
+							mang2.push(row);
+
+						}
+					}
+				});
+			});
+	mang2.reverse();
+	await user.findOne({'user' : obj.value}, 'user password name', function(err, users){
+			if (err) {
+				console.log("bye");
+			}
+			else {
+				post.find().exec((err, posts) => {
+		        posts.forEach(function(row){
+			    mangpost.push(row);
+		        });
+		        mangpost.reverse();
+				
+				var data = {
+					post : mangpost,
+					users : users,
+					manggoiy : mang2,
+					mangcmt : mangcmt
+				}
+				res.render("index",data);
+			});
+			}
+		});
+});
+
 app.get("/send", function(req, res){
 	response = {
 		ten : req.query.ten
@@ -204,8 +408,11 @@ app.get("/test", function(req, res){
 	console.log(response.acc);
 	console.log(obj.value);
 })
-app.get('/process_get', function(req, res){
+app.get('/process_get', async function(req, res){
 	var d = new Date();
+	var date = d.getDate() + "/" + d.getMonth() + "/" + d.getFullYear();
+	var time = d.getHours() + ":" + d.getMinutes() + ":" + d.getSeconds();
+	var c = time + " " + date;
 	var mang1 = [];
     var mangten1 = [];
     var mangacc1 = [];
@@ -216,11 +423,12 @@ app.get('/process_get', function(req, res){
 		accreic : req.query.accreic,
 		namereic : req.query.namereic 
 	};
-	message.create({
+	await message.create({
+		_id : new mongoose.Types.ObjectId(),
 		accsend: response.accsend,
 		accreic: response.accreic,
 		content: response.noidung,
-		time: d
+		time: c
 
 	});
 	friend.find().exec((err, users) => {
@@ -255,7 +463,9 @@ app.get('/process_get', function(req, res){
 		first: response.namereic,
 		firstacc : mang1[0],
 		listmess: list1,
-		mainacc: obj.value
+		mainacc: obj.value,
+		mainname: objname.value
+
 
 	};
 	res.render("message",data);
@@ -267,6 +477,87 @@ function change(obj, next){
 	obj.value = next;
 }
 
+app.get('/sendComment', async function(req, res){
+	var d = new Date();
+	var time = d.getHours() + ":" + d.getMinutes() + ":" + d.getSeconds();
+	var date = d.getDate() + "/" + d.getMonth() + "/" +d.getFullYear();
+	response = {
+		content : req.query.content,
+		accpost : req.query.accpost,
+		idpost : req.query.idpost
+	}
+	console.log(response.accpost);
+	
+	await comment.create({
+		_id : new mongoose.Types.ObjectId(),
+		account : obj.value,
+		name : objname.value,
+		accpost : response.accpost,
+		content : response.content,
+		date : date,
+		time : time,
+		idpost : response.idpost
+
+	});
+
+	var mangpost = [];
+	var mang1 = [];
+	var mang2 = [];
+	var mangcmt = [];
+	console.log(obj);
+	await comment.find().exec((err, comments) =>{
+		comments.forEach(function(row){
+			mangcmt.push(row);
+		});
+	});
+	 friend.find().exec((err, users) => {
+		users.forEach(function(row){
+			if(row.account1 === obj.value){
+				mang1.push(row.account2);
+			}
+			else if(row.account2 === obj.value)
+			{
+				mang1.push(row.account1);
+			}
+			
+		});
+	});
+
+	await user.find().exec((err, users) => {
+				users.forEach(function(row){
+					if (mang1.indexOf(row.user) != -1) {
+
+					}
+					else {
+						if(row.user != obj.value){
+							mang2.push(row);
+
+						}
+					}
+				});
+			});
+	user.findOne({'user' : obj.value}, 'user password name', function(err, users){
+			if (err) {
+				console.log("bye");
+			}
+			else {
+				post.find().exec((err, posts) => {
+		        posts.forEach(function(row){
+			    mangpost.push(row);
+		        });
+				mangpost.reverse();
+				var data = {
+					post : mangpost,
+					users : users,
+					manggoiy : mang2,
+					mangcmt : mangcmt
+				}
+				res.render("index",data);
+			});
+			}
+		});
+
+});
 
 
 

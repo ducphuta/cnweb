@@ -72,7 +72,7 @@ exports.destroy = function(user1, callback){
 	});
 }
 
-exports.titles = function(callback){
+exports.titles = function(){
 	User.find().exec(function(err, docs){
 		if (err) {
 			callback(err);
