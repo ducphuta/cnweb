@@ -241,6 +241,7 @@ app.get("/index", async function(req, res){
 		if (response.password === users.password)
 		{
 			change(objname, users.name);
+			console.log(mangcmt);
 		    var data = {
 		    	post : mangpost,
 		    	users : users,
@@ -470,8 +471,6 @@ app.get('/process_get', async function(req, res){
 	};
 	res.render("message",data);
 });	
-	// console.log(response);
-	// res.end(JSON.stringify(response));
 });
 function change(obj, next){
 	obj.value = next;
@@ -559,5 +558,170 @@ app.get('/sendComment', async function(req, res){
 
 });
 
+app.get('/profile-account-setting', async function(req, res){
+	var mang1 = [];
+	var mang2 = [];
+	await requestfri.find({accreic : obj.value}).exec((err,requestfris) => {
+		requestfris.forEach(function(row){
+			mang1.push(row.accsend);
+		});
+		user.find().exec((err, users) => {
+		users.forEach(function(row){
+			if(mang1.indexOf(row.user) != -1){
+				mang2.push(row);
+			}
+		});
+		data = {
+		user : obj.value,
+		name : objname.value,
+		mangadd : mang2
+	};
+	res.render("profile-account-setting", data);
+	});
+	});
+	
+});
 
+// like.updateOne({acc : "20163180"},  {idpost: "20162121"}).exec((err, result) =>{
+// 	console.log(result);
+// });
+// user.updateOne({user : '20163000'}, {password : '1112'}).exec((err, result) => {
+// 		console.log(result);
+// }
+// );
+app.get('/change_password', function(req, res){
+	var mang1 = [];
+	var mang2 = [];
+	response = {
+		olderpass : req.query.old,
+		newpass : req.query.new,
+		repeatpass : req.query.repeat
+	}
+
+console.log(response.newpass);
+	if (response.newpass != response.repeatpass) {
+		
+		res.render("error");
+	}
+
+	else {
+		user.updateOne({user : obj.value}, {password : response.newpass}).exec((err, result) => {
+			requestfri.find().exec((err, requestfris) =>{
+			requestfris.forEach(function(row){
+			mang1.push(row.accsend);
+		    });
+			user.find().exec((err, users) => {
+		    users.forEach(function(row){
+			if(mang1.indexOf(row.user) != -1){
+				mang2.push(row);
+			}
+		    });
+			data = {
+			user : obj.value,
+			name : objname.value,
+			mangadd : mang2
+		    }
+		console.log(result);
+		res.render("profile-account-setting",data )
+		});
+	});
+});
+	}
+});
+
+app.get('/file',async function(req,res){
+	mangpost = [];
+	mangcmt = [];
+	mang1 = [];
+	mang2 = [];
+	await post.find({account : obj.value}).exec((err, posts) => {
+		posts.forEach(function(row){
+			mangpost.push(row);
+		});
+	});
+
+	await comment.find().exec((err, comments) =>{
+		comments.forEach(function(row){
+			mangcmt.push(row);
+		});
+	});
+	 friend.find().exec((err, users) => {
+		users.forEach(function(row){
+			if(row.account1 === obj.value){
+				mang1.push(row.account2);
+			}
+			else if(row.account2 === obj.value)
+			{
+				mang1.push(row.account1);
+			}
+			
+		});
+	});
+
+	await user.find().exec((err, users) => {
+				users.forEach(function(row){
+					if (mang1.indexOf(row.user) != -1) {
+
+					}
+					else {
+						if(row.user != obj.value){
+							mang2.push(row);
+
+						}
+					}
+				});
+			});
+
+	mangpost.reverse();
+	user.findOne({'user' : obj.value}, 'user password name', function(err, users){
+			if (err) {
+				console.log("bye");
+			}
+			else {
+	             var data = {
+					post : mangpost,
+					users : users,
+					manggoiy : mang2,
+					mangcmt : mangcmt
+				  }
+				res.render("file",data);
+			}
+});
+});
+
+app.get('/addfriend', async function(req, res){
+	var mang1 = [];
+	var mang2 = [];
+	response = {
+		accsend : req.query.accsend
+	}
+
+	await friend.create({
+		_id : new mongoose.Types.ObjectId(),
+		account1 : obj.value,
+		account2 : response.accsend
+	});
+
+	await requestfri.remove({accreic : obj.value}).exec((err, result) =>{
+	console.log(result);
+	})
+	requestfri.find().exec((err, requestfris) =>{
+			requestfris.forEach(function(row){
+			mang1.push(row.accsend);
+		    });
+			user.find().exec((err, users) => {
+		    users.forEach(function(row){
+			if(mang1.indexOf(row.user) != -1){
+				mang2.push(row);
+			}
+		    });
+			data = {
+			user : obj.value,
+			name : objname.value,
+			mangadd : mang2
+		    }
+		res.render("profile-account-setting",data )
+		});
+	});
+})
 
